@@ -1,32 +1,36 @@
 
-# 🚀 End-to-End CI/CD Pipeline on AWS EKS (Cost Optimized)
+# 🚀 End-to-End CI/CD Pipeline on AWS EKS (Step-by-Step Guide)
 
-## 📌 Project Overview
-This project demonstrates a **real-world, end-to-end CI/CD pipeline** built using **Jenkins, Ansible, Terraform, Docker, and AWS EKS**.
-The pipeline automatically provisions infrastructure, builds container images, and deploys an application to Kubernetes in a **cost-optimized (free-tier friendly) setup**.
+This repository contains a **complete beginner-friendly, step-by-step DevOps project** that you can **copy, paste, and practice**.
+All commands are written in **code blocks**, so GitHub automatically shows a **copy button** for easy execution.
 
 ---
 
-## 🧱 Architecture Diagram
+## 🧱 Project Architecture
 
-> 📌 Upload the architecture image in `docs/architecture.png` and GitHub will render it automatically.
+Upload the architecture image to the path below so GitHub renders it automatically:
+
+```
+docs/architecture.png
+```
 
 ![Architecture Diagram](docs/architecture.png)
 
 ---
 
-## 🔧 Tech Stack
+## 🛠️ Tech Stack Used
 
-| Category | Tools |
-|--------|------|
-| Cloud | AWS (EC2, EKS, ECR, ALB, IAM, VPC) |
-| CI/CD | Jenkins |
-| Configuration | Ansible |
-| IaC | Terraform |
-| Containers | Docker |
-| Orchestration | Kubernetes (EKS) |
-| OS | Ubuntu 24.04 |
-| Instance Type | t2.micro (cost optimized) |
+- AWS EC2 (Jenkins Server)
+- AWS EKS (Kubernetes)
+- AWS ECR (Docker Images)
+- AWS Application Load Balancer
+- Jenkins (CI/CD)
+- Ansible (Automation)
+- Terraform (Infrastructure as Code)
+- Docker
+- Kubernetes
+- Ubuntu 24.04
+- Instance type: **t2.medium (4 GiB RAM)**
 
 ---
 
@@ -62,43 +66,137 @@ The pipeline automatically provisions infrastructure, builds container images, a
 
 ---
 
-## 🔁 CI/CD Flow (Simple Explanation)
-
-1. Developer pushes code to GitHub
-2. Jenkins pipeline is triggered
-3. Jenkins uses Ansible to configure tools
-4. Docker image is built and pushed to Amazon ECR
-5. Terraform provisions AWS infrastructure (VPC + EKS)
-6. Application is deployed to EKS
-7. Application is exposed using AWS Application Load Balancer
+# 🪜 STEP-BY-STEP EXECUTION GUIDE
+Follow **each step in order**.
 
 ---
 
-## 🪜 Step-by-Step Execution (High Level)
+## STEP 1️⃣ — Launch Jenkins EC2
 
-1. Launch Jenkins EC2 (Ubuntu 24.04, t2.micro)
-2. Configure Ansible inventory with EC2 IP
-3. Run Ansible playbooks to install tools
-4. Push code to GitHub
-5. Create Jenkins pipeline using Jenkinsfile
-6. Run pipeline
-7. Access application via ALB DNS
+- OS: Ubuntu 24.04
+- Instance type: **t2.medium**
+- Storage: 30–40 GB
+- Open ports: 22, 8080, 80, 443
 
 ---
 
-## 💰 Cost Optimization Notes
+## STEP 2️⃣ — SSH into EC2
 
-- t2.micro used for EC2 & EKS worker node
-- Single node EKS cluster
-- Minimal Kubernetes resources
-- Monitoring limited to `kubectl top`
-- Storage increased instead of compute
-
-⚠️ **Note:** EKS control plane has a fixed cost (~$0.10/hour).
+```bash
+ssh -i linux1.pem ubuntu@<EC2_PUBLIC_IP>
+```
 
 ---
 
-## ✅ Verification Commands
+## STEP 3️⃣ — Install Ansible
+
+```bash
+sudo apt update
+sudo apt install ansible -y
+```
+
+---
+
+## STEP 4️⃣ — Clone the GitHub Repository
+
+```bash
+git clone https://github.com/DevRahul16/end-to-end-cicd-terraform-eks-pipeline.git
+cd end-to-end-cicd-terraform-eks-pipeline
+```
+
+---
+
+## STEP 5️⃣ — Update Ansible Inventory
+
+📄 File: `ansible/inventory`
+
+```ini
+[jenkins]
+<EC2_PUBLIC_IP> ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/linux1.pem
+```
+
+---
+
+## STEP 6️⃣ — Verify Ansible Connectivity
+
+```bash
+ansible jenkins -i ansible/inventory -m ping
+```
+
+Expected output:
+```
+pong
+```
+
+---
+
+## STEP 7️⃣ — Run Ansible Playbooks
+
+```bash
+ansible-playbook ansible/install_jenkins.yaml -i ansible/inventory
+ansible-playbook ansible/install_dependencies.yaml -i ansible/inventory
+ansible-playbook ansible/install_helm.yaml -i ansible/inventory
+```
+
+---
+
+## STEP 8️⃣ — Open Jenkins UI
+
+```
+http://<EC2_PUBLIC_IP>:8080
+```
+
+Unlock Jenkins:
+```bash
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+```
+
+---
+
+## STEP 9️⃣ — Add AWS Credentials in Jenkins
+
+Path:
+```
+Manage Jenkins → Credentials → Global → Add Credentials
+```
+
+Add:
+- AWS Access Key
+- AWS Secret Key
+
+---
+
+## STEP 🔟 — Create Jenkins Pipeline Job
+
+- New Item → Pipeline
+- Name: `eks-cicd-pipeline`
+- SCM: Git
+- Repo URL:
+```text
+https://github.com/DevRahul16/end-to-end-cicd-terraform-eks-pipeline.git
+```
+- Branch: `main`
+- Script Path: `Jenkinsfile`
+
+---
+
+## STEP 1️⃣1️⃣ — Run Pipeline
+
+Click **Build Now**
+
+⏳ First run may take **10–15 minutes** (EKS creation).
+
+---
+
+## STEP 1️⃣2️⃣ — Configure kubectl for EKS
+
+```bash
+aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
+```
+
+---
+
+## STEP 1️⃣3️⃣ — Verify Kubernetes Resources
 
 ```bash
 kubectl get nodes
@@ -109,24 +207,39 @@ kubectl get ingress
 
 ---
 
-## 🧹 Cleanup (Important)
-
-To avoid AWS billing:
+## STEP 1️⃣4️⃣ — Access Application
 
 ```bash
-terraform destroy -auto-approve
+kubectl get ingress
 ```
 
-Also delete unused ECR images manually.
+Open the **ALB DNS** in browser.
+
+---
+
+## STEP 1️⃣5️⃣ — Monitoring
+
+```bash
+kubectl top nodes
+kubectl top pods
+```
+
+---
+
+## STEP 1️⃣6️⃣ — Cleanup (Important)
+
+```bash
+cd terraform
+terraform destroy -auto-approve
+```
 
 ---
 
 ## 👤 Author
 
-**Rahul Kumar**  
+**Rahul Hari Kumar**  
 GitHub: https://github.com/DevRahul16  
 
 ---
 
-## ⭐ If you found this project useful
-Please give it a ⭐ on GitHub!
+
