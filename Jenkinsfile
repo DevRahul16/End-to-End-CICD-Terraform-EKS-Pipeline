@@ -1,37 +1,80 @@
-
 pipeline {
     agent any
+
     environment {
         AWS_REGION = "ap-south-1"
-        ECR_URL = "369878825082.dkr.ecr.ap-south-1.amazonaws.com/cicd-eks-app"
-        CLUSTER = "my-eks-cluster"
+        ECR_REGISTRY = "369878825082.dkr.ecr.ap-south-1.amazonaws.com"
+        ECR_REPO = "cicd-eks-app"
+        IMAGE_TAG = "latest"
+        CLUSTER_NAME = "my-eks-cluster"
     }
+
     stages {
-        stage('Checkout') {
-            steps { git 'https://github.com/DevRahul16/End-to-End-CICD-Terraform-EKS-Pipeline.git' }
-        }
-        stage('Ansible Setup') {
-            steps {
-                sh "echo Ansible setup placeholder"
-            }
-        }
-        stage('Docker Build & Push') {
+
+        stage('Verify Tools') {
             steps {
                 sh '''
-                echo docker login
-                echo docker build
-                echo docker push
+                docker --version
+                aws --version
+                terraform -version
+                kubectl version --client
                 '''
             }
         }
-        stage('Terraform Apply') {
+
+        stage('Docker Build') {
             steps {
-                sh 'echo terraform apply'
+                sh '''
+                docker build -t ${ECR_REPO}:${IMAGE_TAG} .
+                '''
             }
         }
+
+        stage('Docker Push to ECR') {
+            steps {
+                withAWS(credentials: 'aws-creds', region: "${AWS_REGION}") {
+                    sh '''
+                    aws ecr get-login-password --region ${AWS_REGION} \
+                    | docker login --username AWS --password-stdin ${ECR_REGISTRY}
+
+                    docker tag ${ECR_REPO}:${IMAGE_TAG} ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+                    docker push ${ECR_REGISTRY}/${ECR_REPO}:${IMAGE_TAG}
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Init & Apply') {
+            steps {
+                withAWS(credentials: 'aws-creds', region: "${AWS_REGION}") {
+                    sh '''
+                    cd terraform
+                    terraform init
+                    terraform apply -auto-approve
+                    '''
+                }
+            }
+        }
+
+        stage('Update kubeconfig') {
+            steps {
+                withAWS(credentials: 'aws-creds', region: "${AWS_REGION}") {
+                    sh '''
+                    aws eks update-kubeconfig \
+                      --region ${AWS_REGION} \
+                      --name ${CLUSTER_NAME}
+                    '''
+                }
+            }
+        }
+
         stage('Deploy to EKS') {
             steps {
-                sh 'echo kubectl apply'
+                sh '''
+                kubectl apply -f k8s/deployment.yaml
+                kubectl apply -f k8s/service.yaml
+                kubectl apply -f k8s/ingress.yaml
+                '''
             }
         }
     }
