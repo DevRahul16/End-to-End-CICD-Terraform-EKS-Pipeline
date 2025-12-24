@@ -1,1 +1,8 @@
-variable "cluster_name" { default="my-eks-cluster" }
+variable "cluster_name" {
+  default = "my-eks-cluster"
+}
+
+variable "private_subnet_ids" {
+  type = list(string)
+}
+
