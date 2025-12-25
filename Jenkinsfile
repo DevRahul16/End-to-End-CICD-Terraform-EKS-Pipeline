@@ -7,26 +7,27 @@ pipeline {
     }
 
     stages {
+
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/DevRahul16/End-to-End-CICD-Terraform-EKS-Pipeline.git'
+                checkout scm
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t node-app:latest .'
+                sh '''
+                docker build -t node-app:latest .
+                '''
             }
         }
 
         stage('Login to ECR') {
             steps {
-                withAWS(credentials: 'aws-creds', region: "${AWS_REGION}") {
-                    sh '''
-                    aws ecr get-login-password --region $AWS_REGION | docker login \
-                      --username AWS --password-stdin $ECR_REPO
-                    '''
-                }
+                sh '''
+                aws ecr get-login-password --region $AWS_REGION \
+                | docker login --username AWS --password-stdin $ECR_REPO
+                '''
             }
         }
 
@@ -42,9 +43,8 @@ pipeline {
         stage('Deploy to EKS') {
             steps {
                 sh '''
-                kubectl apply -f k8s/deployment.yaml
-                kubectl apply -f k8s/service.yaml
-                kubectl rollout restart deployment/node-app -n app
+                aws eks update-kubeconfig --region $AWS_REGION --name devops-eks-cluster
+                kubectl apply -f k8s/
                 '''
             }
         }
