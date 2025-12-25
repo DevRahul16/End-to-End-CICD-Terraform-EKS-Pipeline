@@ -1,13 +1,23 @@
+# OS junk files
+.DS_Store
+Thumbs.db
+
 # Terraform
 terraform/.terraform/
+terraform/*.tfstate
+terraform/*.tfstate.backup
 terraform/.terraform.lock.hcl
-*.tfstate
-*.tfstate.backup
 
-# OS / Editor
-.DS_Store
-.vscode/
-.idea/
-
-# Logs
+# Jenkins
+workspace/
 *.log
+
+# Docker
+*.tar
+
+# Node modules (future use)
+node_modules/
+
+# Kubernetes temp files
+*.swp
+
