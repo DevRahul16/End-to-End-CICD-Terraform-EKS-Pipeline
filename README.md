@@ -1,136 +1,83 @@
+# End‑to‑End CICD Pipeline with Terraform, Jenkins & AWS EKS
 
-# 🚀 End-to-End CI/CD Pipeline on AWS EKS (Step-by-Step Guide)
+🚀 This repository demonstrates a complete **end‑to‑end CI/CD pipeline** where application code changes automatically trigger build, containerization, infrastructure provisioning, and deployment to **Amazon EKS**.
 
-This repository contains a **complete beginner-friendly, step-by-step DevOps project** that you can **copy, paste, and practice**.
-All commands are written in **code blocks**, so GitHub automatically shows a **copy button** for easy execution.
+This project closely reflects **real‑world DevOps production workflows** using Infrastructure as Code and Kubernetes‑based deployments.
 
 ---
 
-## 🧱 Project Architecture
+## 🧩 Architecture Overview
 
-Upload the architecture image to the path below so GitHub renders it automatically:
+**CI/CD Flow**
+1. Developer pushes code to GitHub  
+2. GitHub Webhook triggers Jenkins  
+3. Jenkins builds Docker image  
+4. Image is pushed to Docker Hub / ECR  
+5. Terraform provisions AWS infrastructure  
+6. Application is deployed to Amazon EKS  
+7. AWS Load Balancer exposes the application  
 
+📌 Architecture diagram should be placed at:
 ```
 docs/architecture.png
 ```
 
-![Architecture Diagram](docs/architecture.png)
-
 ---
 
-## 🛠️ Tech Stack Used
+## 🛠️ Tech Stack
 
-- AWS EC2 (Jenkins Server)
-- AWS EKS (Kubernetes)
-- AWS ECR (Docker Images)
-- AWS Application Load Balancer
-- Jenkins (CI/CD)
-- Ansible (Automation)
-- Terraform (Infrastructure as Code)
-- Docker
-- Kubernetes
-- Ubuntu 24.04
-- Instance type: **t2.medium (4 GiB RAM)**
+| Category | Tools |
+|--------|------|
+| Cloud | AWS (EC2, EKS, VPC, IAM, ELB) |
+| CI/CD | Jenkins |
+| IaC | Terraform |
+| Containers | Docker |
+| Orchestration | Kubernetes |
+| Configuration Mgmt | Ansible |
+| SCM | GitHub |
 
 ---
 
 ## 📂 Repository Structure
 
 ```
-.
-├── Jenkinsfile
-├── Dockerfile
-├── README.md
-├── ansible/
-│   ├── inventory
-│   ├── install_jenkins.yaml
-│   ├── install_dependencies.yaml
-│   └── install_helm.yaml
-├── terraform/
-│   ├── main.tf
-│   ├── variables.tf
-│   ├── outputs.tf
-│   └── eks/
-│       └── node-group.tf
-├── app/
-│   ├── server.js
-│   ├── package.json
-│   └── public/index.html
-├── k8s/
-│   ├── deployment.yaml
-│   ├── service.yaml
-│   └── ingress.yaml
-└── docs/
-    └── architecture.png
+├── ansible/            # Jenkins & dependency installation
+├── app/                # Sample Node.js application
+├── k8s/                # Kubernetes manifests
+├── terraform/          # Terraform infrastructure code
+├── Dockerfile          # Docker image definition
+├── Jenkinsfile         # CI/CD pipeline
+├── docs/               # Architecture diagram
+├── README.md           # Documentation
 ```
 
 ---
 
-# 🪜 STEP-BY-STEP EXECUTION GUIDE
-Follow **each step in order**.
+## ⚙️ Prerequisites
+
+- AWS account
+- Terraform >= 1.x
+- AWS CLI configured
+- kubectl installed
+- Jenkins server (EC2 recommended)
+- Docker installed
+- Jenkins plugins:
+  - Git
+  - Docker Pipeline
+  - AWS Credentials
 
 ---
 
-## STEP 1️⃣ — Launch Jenkins EC2
+## 🚀 Setup Guide
 
-- OS: Ubuntu 24.04
-- Instance type: **t2.medium**
-- Storage: 30–40 GB
+### 1️⃣ Jenkins Server Setup
+- Instance: t2.medium
+- OS: Ubuntu
 - Open ports: 22, 8080, 80, 443
 
 ---
 
-## STEP 2️⃣ — SSH into EC2
-
-```bash
-ssh -i linux1.pem ubuntu@<EC2_PUBLIC_IP>
-```
-
----
-
-## STEP 3️⃣ — Install Ansible
-
-```bash
-sudo apt update
-sudo apt install ansible -y
-```
-
----
-
-## STEP 4️⃣ — Clone the GitHub Repository
-
-```bash
-git clone https://github.com/DevRahul16/end-to-end-cicd-terraform-eks-pipeline.git
-cd end-to-end-cicd-terraform-eks-pipeline
-```
-
----
-
-## STEP 5️⃣ — Update Ansible Inventory
-
-📄 File: `ansible/inventory`
-
-```ini
-[jenkins]
-<EC2_PUBLIC_IP> ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/linux1.pem
-```
-
----
-
-## STEP 6️⃣ — Verify Ansible Connectivity
-
-```bash
-ansible jenkins -i ansible/inventory -m ping
-```
-
-Expected output:
-```
-pong
-```
-
----
-
-## STEP 7️⃣ — Run Ansible Playbooks
+### 2️⃣ Install Jenkins & Tools (Ansible)
 
 ```bash
 ansible-playbook ansible/install_jenkins.yaml -i ansible/inventory
@@ -140,93 +87,41 @@ ansible-playbook ansible/install_helm.yaml -i ansible/inventory
 
 ---
 
-## STEP 8️⃣ — Open Jenkins UI
+### 3️⃣ Jenkins Configuration
 
-```
-http://<EC2_PUBLIC_IP>:8080
-```
-
-Unlock Jenkins:
-```bash
-sudo cat /var/lib/jenkins/secrets/initialAdminPassword
-```
+1. Add AWS credentials in Jenkins  
+2. Create pipeline job  
+3. Select SCM → Git  
+4. Repository URL → this GitHub repo  
+5. Script Path → `Jenkinsfile`  
 
 ---
 
-## STEP 9️⃣ — Add AWS Credentials in Jenkins
+### 4️⃣ CI/CD Pipeline Stages
 
-Path:
-```
-Manage Jenkins → Credentials → Global → Add Credentials
-```
-
-Add:
-- AWS Access Key
-- AWS Secret Key
+- Git Checkout
+- Docker Build
+- Docker Push
+- Terraform Init & Apply
+- Kubernetes Deployment
+- Rolling Update on EKS
 
 ---
 
-## STEP 🔟 — Create Jenkins Pipeline Job
-
-- New Item → Pipeline
-- Name: `eks-cicd-pipeline`
-- SCM: Git
-- Repo URL:
-```text
-https://github.com/DevRahul16/end-to-end-cicd-terraform-eks-pipeline.git
-```
-- Branch: `main`
-- Script Path: `Jenkinsfile`
-
----
-
-## STEP 1️⃣1️⃣ — Run Pipeline
-
-Click **Build Now**
-
-⏳ First run may take **10–15 minutes** (EKS creation).
-
----
-
-## STEP 1️⃣2️⃣ — Configure kubectl for EKS
+## ✅ Verification
 
 ```bash
-aws eks update-kubeconfig --region ap-south-1 --name my-eks-cluster
-```
-
----
-
-## STEP 1️⃣3️⃣ — Verify Kubernetes Resources
-
-```bash
+aws eks update-kubeconfig --region <region> --name <cluster-name>
 kubectl get nodes
 kubectl get pods
 kubectl get svc
-kubectl get ingress
 ```
+
+Access the application using the **Load Balancer DNS**.
 
 ---
 
-## STEP 1️⃣4️⃣ — Access Application
-
-```bash
-kubectl get ingress
-```
-
-Open the **ALB DNS** in browser.
-
----
-
-## STEP 1️⃣5️⃣ — Monitoring
-
-```bash
-kubectl top nodes
-kubectl top pods
-```
-
----
-
-## STEP 1️⃣6️⃣ — Cleanup (Important)
+## 🧹 Cleanup
 
 ```bash
 cd terraform
@@ -235,11 +130,21 @@ terraform destroy -auto-approve
 
 ---
 
-## 👤 Author
+## 🔐 Best Practices Followed
 
-**Rahul Hari Kumar**  
-GitHub: https://github.com/DevRahul16  
+- Infrastructure as Code
+- Automated CI/CD
+- Rolling deployments
+- Scalable Kubernetes architecture
+- Separation of concerns
 
 ---
 
+## 👤 Author
 
+**Rahul Hari Kumar**  
+GitHub: https://github.com/DevRahul16
+
+---
+
+⭐ If you found this project useful, give it a star!
