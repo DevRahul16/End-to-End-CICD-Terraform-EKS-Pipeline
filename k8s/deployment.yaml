@@ -17,5 +17,5 @@ spec:
       - name: node-app
         image: 369878825082.dkr.ecr.ap-south-1.amazonaws.com/node-app:latest
         ports:
-        - containerPort: 80
+        - containerPort: 3000
 
